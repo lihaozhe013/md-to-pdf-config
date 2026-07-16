@@ -562,7 +562,7 @@
   margin-bottom: 0;
   font-family: var(--fontStack-monospace, ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace);
   font-size: 12px;
-  word-wrap: normal;
+  word-wrap: break-word;
 }
 
 .markdown-body .octicon {
@@ -932,8 +932,8 @@
 .markdown-body pre>code {
   padding: 0;
   margin: 0;
-  word-break: normal;
-  white-space: pre;
+  word-break: break-word;
+  white-space: pre-wrap;
   background: rgba(0,0,0,0);
   border: 0;
 }
@@ -965,7 +965,7 @@
   margin: 0;
   overflow: visible;
   line-height: inherit;
-  word-wrap: normal;
+  word-wrap: break-word;
   background-color: rgba(0,0,0,0);
   border: 0;
 }
