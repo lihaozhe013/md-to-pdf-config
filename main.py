@@ -32,12 +32,15 @@ def convert_file(md_file: Path, project_root: Path, config_file: Path,
     output_path = output or str(md_file.with_suffix(".pdf"))
 
     cmd = [
-        "md-to-pdf",
+        str(shutil.which("md-to-pdf") or "md-to-pdf"),
         "--basedir", str(project_root),
         "--config-file", str(config_file),
     ]
 
-    result = subprocess.run(cmd, input=md_content.encode("utf-8"), capture_output=True)
+    use_shell = sys.platform == "win32" and cmd[0].lower().endswith((".cmd", ".bat"))
+    if use_shell:
+        cmd = subprocess.list2cmdline(cmd)
+    result = subprocess.run(cmd, input=md_content.encode("utf-8"), capture_output=True, shell=use_shell)
     if result.returncode != 0:
         print(result.stderr.decode("utf-8", errors="replace"), file=sys.stderr)
         sys.exit(result.returncode)
