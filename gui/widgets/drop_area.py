@@ -148,7 +148,7 @@ class DropArea(QFrame):
             event.acceptProposedAction()
 
     def _on_select(self):
-        file_path, _ = QFileDialog.getOpenFileName(
+        file_path, _f = QFileDialog.getOpenFileName(
             self, _("Select Markdown File"), "", "Markdown (*.md);;All Files (*)"
         )
         if file_path:
