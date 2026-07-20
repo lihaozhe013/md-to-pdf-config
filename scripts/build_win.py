@@ -30,6 +30,7 @@ def main():
         "--specpath", str(DIST_DIR),
         "--workpath", str(DIST_DIR / "build"),
         *[f"--add-data={d}" for d in add_data],
+        "--collect-data", "i18n",
         "--hidden-import", "pypdf.constants",
         str(REPO_ROOT / "gui_main.py"),
     ]

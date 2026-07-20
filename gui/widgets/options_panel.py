@@ -1,6 +1,5 @@
-from pathlib import Path
-
 import json
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -19,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from converter import ensure_config, get_project_root
+from i18n import _
 
 PAGE_SIZES = ["A4", "A3", "A5", "Letter", "Legal"]
 PDF_MARGINS = ["10mm", "15mm", "20mm", "25mm", "30mm"]
@@ -49,48 +49,65 @@ class OptionsPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        group = QGroupBox("选项")
-        form = QFormLayout(group)
+        self._group = QGroupBox()
+        form = QFormLayout(self._group)
         form.setLabelAlignment(Qt.AlignRight)
 
         self._css_combo = QComboBox()
         for css in self._css_files:
             self._css_combo.addItem(css.name, str(css))
         self._select_css(self._default_css)
-        form.addRow("CSS 主题:", self._css_combo)
+        self._css_label = QLabel()
+        form.addRow(self._css_label, self._css_combo)
 
         dir_layout = QHBoxLayout()
         self._output_dir_edit = QLineEdit()
-        self._output_dir_edit.setPlaceholderText("未选择，将输出到源文件同目录")
         self._output_dir_edit.setReadOnly(True)
-        self._browse_btn = QPushButton("浏览…")
+        self._browse_btn = QPushButton()
         self._browse_btn.clicked.connect(self._on_browse)
         dir_layout.addWidget(self._output_dir_edit)
         dir_layout.addWidget(self._browse_btn)
-        form.addRow("输出目录:", dir_layout)
+        self._output_dir_label = QLabel()
+        form.addRow(self._output_dir_label, dir_layout)
 
         self._filename_edit = QLineEdit()
-        self._filename_edit.setPlaceholderText("默认为源文件名")
-        form.addRow("输出文件名:", self._filename_edit)
+        self._filename_label = QLabel()
+        form.addRow(self._filename_label, self._filename_edit)
 
         self._page_size_combo = QComboBox()
         self._page_size_combo.addItems(PAGE_SIZES)
         self._page_size_combo.setCurrentText("A4")
-        form.addRow("页面大小:", self._page_size_combo)
+        self._page_size_label = QLabel()
+        form.addRow(self._page_size_label, self._page_size_combo)
 
         self._margin_combo = QComboBox()
         self._margin_combo.addItems(PDF_MARGINS)
         self._margin_combo.setCurrentText("20mm")
-        form.addRow("边距:", self._margin_combo)
+        self._margin_label = QLabel()
+        form.addRow(self._margin_label, self._margin_combo)
 
-        self._footer_check = QCheckBox("显示页脚页码")
+        self._footer_check = QCheckBox()
         self._footer_check.setChecked(True)
         form.addRow("", self._footer_check)
 
-        layout.addWidget(group)
+        layout.addWidget(self._group)
+
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        self._group.setTitle(_("Options"))
+        self._css_label.setText(_("CSS Theme:"))
+        self._output_dir_label.setText(_("Output Directory:"))
+        self._output_dir_edit.setPlaceholderText(_("Not selected, output to same directory as source"))
+        self._browse_btn.setText(_("Browse…"))
+        self._filename_label.setText(_("Output Filename:"))
+        self._filename_edit.setPlaceholderText(_("Default to source filename"))
+        self._page_size_label.setText(_("Page Size:"))
+        self._margin_label.setText(_("Margin:"))
+        self._footer_check.setText(_("Show Footer Page Numbers"))
 
     def _on_browse(self):
-        directory = QFileDialog.getExistingDirectory(self, "选择输出目录")
+        directory = QFileDialog.getExistingDirectory(self, _("Select Output Directory"))
         if directory:
             self._output_dir_edit.setText(directory)
 

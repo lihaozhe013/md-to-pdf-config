@@ -3,6 +3,8 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
     QLabel,
     QMainWindow,
     QProgressBar,
@@ -13,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from converter import check_md_to_pdf
+from i18n import _, current_lang, load_language
 
 from .converter_thread import ConverterThread
 from .widgets.drop_area import DropArea
@@ -23,12 +26,16 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self._thread: ConverterThread | None = None
+        self._current_file_name: str | None = None
+        self._status_success: bool | None = None
+        self._status_output: str | None = None
+        self._status_error: str | None = None
+        self._dependency_warning_shown = False
         self._setup_ui()
         self._apply_style()
         self._check_dependencies()
 
     def _setup_ui(self):
-        self.setWindowTitle("md-to-pdf GUI")
         self.setMinimumSize(600, 550)
 
         central = QWidget()
@@ -37,6 +44,21 @@ class MainWindow(QMainWindow):
         layout.setSpacing(12)
         layout.setContentsMargins(16, 16, 16, 16)
 
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+        lang_label = QLabel()
+        self._lang_label = lang_label
+        top_bar.addWidget(lang_label)
+        self._lang_combo = QComboBox()
+        self._lang_combo.addItem("中文", "zh_CN")
+        self._lang_combo.addItem("English", "en")
+        idx = self._lang_combo.findData(current_lang())
+        if idx >= 0:
+            self._lang_combo.setCurrentIndex(idx)
+        self._lang_combo.currentIndexChanged.connect(self._on_language_changed)
+        top_bar.addWidget(self._lang_combo)
+        layout.addLayout(top_bar)
+
         self._drop_area = DropArea()
         self._drop_area.file_selected.connect(self._on_file_selected)
         layout.addWidget(self._drop_area)
@@ -44,7 +66,7 @@ class MainWindow(QMainWindow):
         self._options_panel = OptionsPanel()
         layout.addWidget(self._options_panel)
 
-        self._convert_btn = QPushButton("开始转换")
+        self._convert_btn = QPushButton()
         self._convert_btn.setMinimumHeight(40)
         self._convert_btn.setCursor(Qt.PointingHandCursor)
         self._convert_btn.clicked.connect(self._on_convert)
@@ -60,12 +82,25 @@ class MainWindow(QMainWindow):
         self._log = QTextEdit()
         self._log.setReadOnly(True)
         self._log.setMaximumHeight(120)
-        self._log.setPlaceholderText("日志信息...")
         layout.addWidget(self._log)
 
-        self._status_label = QLabel("就绪")
+        self._status_label = QLabel()
         self._status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self._status_label)
+
+        self.retranslate_ui()
+
+    def retranslate_ui(self):
+        self.setWindowTitle(_("md-to-pdf GUI"))
+        self._lang_label.setText(_("Language") + ":")
+        self._convert_btn.setText(_("Start Conversion") if not self._thread else _("Converting..."))
+        self._log.setPlaceholderText(_("Log..."))
+        if self._status_success is True:
+            self._status_label.setText(_("✓ Conversion successful"))
+        elif self._status_success is False:
+            self._status_label.setText(_("✗ Conversion failed"))
+        else:
+            self._status_label.setText(_("Ready"))
 
     def _apply_style(self):
         p = self.palette()
@@ -113,13 +148,26 @@ class MainWindow(QMainWindow):
 
     def _check_dependencies(self):
         if not check_md_to_pdf():
-            self._log.append("⚠ md-to-pdf 未安装！请运行: npm i -g md-to-pdf")
+            self._dependency_warning_shown = True
+            self._log.append(_("⚠ md-to-pdf not installed! Run: npm i -g md-to-pdf"))
+
+    def _on_language_changed(self, index: int):
+        lang = self._lang_combo.itemData(index)
+        load_language(lang)
+        self.retranslate_ui()
+        self._drop_area.retranslate_ui()
+        self._options_panel.retranslate_ui()
+        if self._dependency_warning_shown:
+            self._log.clear()
+            self._log.append(_("⚠ md-to-pdf not installed! Run: npm i -g md-to-pdf"))
 
     def _on_file_selected(self, path: str):
         self._convert_btn.setEnabled(True)
+        self._current_file_name = Path(path).name
         stem = Path(path).stem
         self._options_panel.set_output_filename(stem + ".pdf")
-        self._log.append(f"已选择: {path}")
+        self._status_output = path
+        self._log.append(_("Selected: {path}").format(path=path))
 
     def _on_convert(self):
         md_path = self._drop_area.file_path
@@ -128,7 +176,7 @@ class MainWindow(QMainWindow):
 
         css_path = self._options_panel.css_path
         if not css_path:
-            self._log.append("错误: 未找到 CSS 文件")
+            self._log.append(_("Error: CSS file not found"))
             return
 
         md_file = Path(md_path)
@@ -137,7 +185,7 @@ class MainWindow(QMainWindow):
         output_path = str(Path(output_dir) / filename) if output_dir else str(md_file.with_suffix(".pdf"))
 
         self._set_ui_busy(True)
-        self._log.append(f"开始转换: {md_file.name}")
+        self._log.append(_("Converting: {name}").format(name=md_file.name))
 
         self._thread = ConverterThread(
             md_path=md_path,
@@ -147,7 +195,7 @@ class MainWindow(QMainWindow):
             margin=self._options_panel.margin,
             show_footer=self._options_panel.show_footer,
         )
-        self._thread.started.connect(lambda name: self._log.append(f"正在处理: {name}"))
+        self._thread.started.connect(lambda name: self._log.append(_("Processing: {name}").format(name=name)))
         self._thread.progress.connect(lambda msg: self._log.append(msg))
         self._thread.finished.connect(self._on_conversion_done)
         self._thread.start()
@@ -155,15 +203,17 @@ class MainWindow(QMainWindow):
     def _on_conversion_done(self, result):
         self._set_ui_busy(False)
         if result.success:
-            self._status_label.setText("✓ 转换成功")
-            self._log.append(f"✓ 成功: {result.output_path}")
+            self._status_success = True
+            self._status_label.setText(_("✓ Conversion successful"))
+            self._log.append(_("✓ Success: {output_path}").format(output_path=result.output_path))
         else:
-            self._status_label.setText("✗ 转换失败")
-            self._log.append(f"✗ 失败: {result.error}")
+            self._status_success = False
+            self._status_label.setText(_("✗ Conversion failed"))
+            self._log.append(_("✗ Failed: {error}").format(error=result.error))
         self._thread = None
 
     def _set_ui_busy(self, busy: bool):
         self._convert_btn.setEnabled(not busy)
-        self._convert_btn.setText("转换中..." if busy else "开始转换")
+        self._convert_btn.setText(_("Converting...") if busy else _("Start Conversion"))
         self._progress_bar.setVisible(busy)
         self._drop_area.setAcceptDrops(not busy)

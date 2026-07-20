@@ -10,6 +10,7 @@ from converter import (
     get_project_root,
     set_config_stylesheet,
 )
+from i18n import _
 
 
 class ConverterThread(QThread):
@@ -45,12 +46,12 @@ class ConverterThread(QThread):
             encoding="utf-8",
         )
 
-        self.progress.emit("预处理中...")
+        self.progress.emit(_("Preprocessing..."))
         result = convert_file(md_file, project_root, config_file, self.output_path)
 
         if result.success:
-            self.progress.emit(f"转换成功 → {result.output_path}")
+            self.progress.emit(_("Converted → {output_path}").format(output_path=result.output_path))
         else:
-            self.progress.emit(f"转换失败: {result.error}")
+            self.progress.emit(_("Conversion failed: {error}").format(error=result.error))
 
         self.finished.emit(result)

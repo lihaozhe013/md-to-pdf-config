@@ -54,6 +54,7 @@ def build_app() -> Path:
         "--workpath", str(DIST_DIR / "build"),
         "--osx-bundle-identifier", "com.mdtopdf.gui",
         *[f"--add-data={d}" for d in add_data],
+        "--collect-data", "i18n",
         "--hidden-import", "pypdf.constants",
         str(REPO_ROOT / "gui_main.py"),
     ]

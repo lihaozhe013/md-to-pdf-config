@@ -12,6 +12,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from i18n import _
+
 
 class DropArea(QFrame):
     file_selected = Signal(str)
@@ -19,6 +21,7 @@ class DropArea(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._file_path: str | None = None
+        self._selected_name: str | None = None
         self._setup_ui()
         self._apply_style()
 
@@ -36,7 +39,7 @@ class DropArea(QFrame):
         icon_font.setPointSize(32)
         self._icon_label.setFont(icon_font)
 
-        self._hint_label = QLabel("拖拽 Markdown 文件到此处\n或点击下方按钮选择")
+        self._hint_label = QLabel()
         self._hint_label.setAlignment(Qt.AlignCenter)
 
         self._file_label = QLabel("")
@@ -49,9 +52,9 @@ class DropArea(QFrame):
 
         btn_layout = QHBoxLayout()
         btn_layout.setAlignment(Qt.AlignCenter)
-        self._select_btn = QPushButton("选择文件")
+        self._select_btn = QPushButton()
         self._select_btn.clicked.connect(self._on_select)
-        self._clear_btn = QPushButton("清除")
+        self._clear_btn = QPushButton()
         self._clear_btn.clicked.connect(self._on_clear)
         self._clear_btn.setVisible(False)
         btn_layout.addWidget(self._select_btn)
@@ -62,7 +65,16 @@ class DropArea(QFrame):
         layout.addWidget(self._file_label)
         layout.addLayout(btn_layout)
 
+        self.retranslate_ui()
+
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+    def retranslate_ui(self):
+        self._hint_label.setText(_("Drag Markdown file here\nor click button below to select"))
+        self._select_btn.setText(_("Select File"))
+        self._clear_btn.setText(_("Clear"))
+        if self._selected_name:
+            self._file_label.setText(_("Selected: {name}").format(name=self._selected_name))
 
     def _apply_style(self):
         p = self.palette()
@@ -137,13 +149,14 @@ class DropArea(QFrame):
 
     def _on_select(self):
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "选择 Markdown 文件", "", "Markdown (*.md);;All Files (*)"
+            self, _("Select Markdown File"), "", "Markdown (*.md);;All Files (*)"
         )
         if file_path:
             self._set_file(file_path)
 
     def _on_clear(self):
         self._file_path = None
+        self._selected_name = None
         self._file_label.setVisible(False)
         self._hint_label.setVisible(True)
         self._icon_label.setVisible(True)
@@ -151,8 +164,8 @@ class DropArea(QFrame):
 
     def _set_file(self, path: str):
         self._file_path = path
-        name = Path(path).name
-        self._file_label.setText(f"已选择: {name}")
+        self._selected_name = Path(path).name
+        self._file_label.setText(_("Selected: {name}").format(name=self._selected_name))
         self._file_label.setVisible(True)
         self._hint_label.setVisible(False)
         self._icon_label.setVisible(False)
