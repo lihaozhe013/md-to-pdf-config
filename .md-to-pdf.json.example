@@ -1,6 +1,6 @@
 {
   "stylesheet": [
-    "github-markdown.css"
+    "rose.css"
   ],
   "body_class": [
     "markdown-body"
