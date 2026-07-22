@@ -72,6 +72,11 @@ uv sync --group dev
 make build-win
 ```
 
+## Credits
+
+- `css/rose.css` — derived from [Typora's theme.typora.io](https://github.com/typora/theme.typora.io/tree/gh-pages)
+- `css/github-markdown.css` — derived from [github-markdown-css](https://github.com/sindresorhus/github-markdown-css)
+
 ## Project structure
 
 ```
