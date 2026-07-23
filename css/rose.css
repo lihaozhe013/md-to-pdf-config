@@ -106,7 +106,7 @@
   --fontStack-sansSerif: 'Inter', 'Open Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --fontStack-monospace: 'JetBrainsMono Nerd Font', ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   font-family: var(--fontStack-sansSerif);
-  zoom: 80%;
+  /* zoom: 85%; */
 
   /* ── Override github-markdown.css variables ── */
   --fgColor-default: #4a3b40;
